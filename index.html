@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#0E1420">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Не парю</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --ink:#0E1420;
+    --slate:#16202F;
+    --slate-2:#1D2A3C;
+    --line:#26344A;
+    --ash:#8697AE;
+    --bone:#EEF3F8;
+    --breath:#6FE3C4;
+    --ember:#E8794A;
+    --mono: ui-monospace, "SF Mono", "Roboto Mono", "DejaVu Sans Mono", monospace;
+    --sans: system-ui, -apple-system, "Roboto", "Segoe UI", sans-serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0; height:100%}
+  body{
+    background:var(--ink); color:var(--bone); font-family:var(--sans);
+    font-size:16px; line-height:1.45; overscroll-behavior:none; -webkit-font-smoothing:antialiased;
+  }
+  button{font:inherit; color:inherit; background:none; border:none; cursor:pointer}
+  input{font:inherit}
+
+  .app{max-width:520px; margin:0 auto; min-height:100%; display:flex; flex-direction:column; padding-top:env(safe-area-inset-top)}
+
+  .hud{display:flex; align-items:baseline; justify-content:space-between; padding:18px 20px 6px}
+  .brand{font-family:var(--mono); font-size:12px; letter-spacing:.22em; text-transform:uppercase; color:var(--ash)}
+  .brand b{color:var(--breath); font-weight:600}
+  .record{font-family:var(--mono); font-size:11px; color:var(--ash); letter-spacing:.06em}
+
+  main{flex:1; padding:0 20px 96px}
+  .view{display:none; animation:rise .28s ease both}
+  .view.on{display:block}
+  @keyframes rise{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none}}
+
+  .hero{position:relative; padding:34px 0 26px; text-align:center}
+  .aura{
+    position:absolute; left:50%; top:46%; width:280px; height:280px; transform:translate(-50%,-50%);
+    background:radial-gradient(circle, rgba(111,227,196,.16) 0%, rgba(111,227,196,0) 68%);
+    animation:breathe 19s ease-in-out infinite; pointer-events:none;
+  }
+  @keyframes breathe{
+    0%{transform:translate(-50%,-50%) scale(.82); opacity:.55}
+    21%{transform:translate(-50%,-50%) scale(1.12); opacity:1}
+    58%{transform:translate(-50%,-50%) scale(1.12); opacity:1}
+    100%{transform:translate(-50%,-50%) scale(.82); opacity:.55}
+  }
+  .eyebrow{position:relative; font-family:var(--mono); font-size:11px; letter-spacing:.3em; text-transform:uppercase; color:var(--ash)}
+  .clock{position:relative; display:flex; justify-content:center; gap:14px; margin-top:14px; font-family:var(--mono)}
+  .unit{min-width:56px}
+  .unit .n{display:block; font-size:40px; font-weight:600; letter-spacing:-.03em; font-variant-numeric:tabular-nums; line-height:1}
+  .unit.days .n{font-size:56px; color:var(--breath)}
+  .unit .u{display:block; margin-top:8px; font-size:10px; letter-spacing:.18em; color:var(--ash)}
+  .since{position:relative; margin-top:18px; font-size:13px; color:var(--ash)}
+
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px}
+  .card{background:var(--slate); border:1px solid var(--line); border-radius:16px; padding:14px 15px}
+  .card .k{font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ash)}
+  .card .v{font-family:var(--mono); font-size:24px; font-weight:600; margin-top:8px; letter-spacing:-.02em; font-variant-numeric:tabular-nums}
+  .card .s{font-size:12px; color:var(--ash); margin-top:3px}
+  .card.wide{grid-column:1 / -1}
+  .card.hidden{display:none}
+
+  .urge{
+    margin-top:14px; width:100%; padding:16px; border-radius:16px;
+    border:1px solid rgba(232,121,74,.42); background:rgba(232,121,74,.09);
+    color:var(--ember); font-weight:600; display:flex; align-items:center; justify-content:center; gap:10px;
+  }
+  .urge:active{transform:scale(.985)}
+  .urge .dot{width:8px; height:8px; border-radius:50%; background:var(--ember)}
+
+  h2.sec{font-size:13px; letter-spacing:.2em; text-transform:uppercase; color:var(--ash); font-weight:500; margin:26px 0 14px; font-family:var(--mono)}
+  .tl{list-style:none; margin:0; padding:0 0 0 26px; position:relative}
+  .tl:before{content:""; position:absolute; left:5px; top:6px; bottom:6px; width:1px; background:var(--line)}
+  .ms{position:relative; padding:0 0 20px}
+  .ms:before{content:""; position:absolute; left:-25px; top:6px; width:11px; height:11px; border-radius:50%; background:var(--ink); border:1px solid var(--line)}
+  .ms.done:before{background:var(--breath); border-color:var(--breath)}
+  .ms.now:before{background:var(--ink); border-color:var(--breath); box-shadow:0 0 0 4px rgba(111,227,196,.16)}
+  .ms .t{font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--ash); text-transform:uppercase}
+  .ms .h{margin-top:3px; font-weight:600; font-size:15px}
+  .ms.done .h{color:var(--breath)}
+  .ms .d{margin-top:2px; font-size:13px; color:var(--ash)}
+  .bar{height:4px; border-radius:2px; background:var(--slate-2); margin-top:9px; overflow:hidden}
+  .bar i{display:block; height:100%; background:var(--breath); border-radius:2px; transition:width .6s ease}
+  .ms .left{font-family:var(--mono); font-size:11px; color:var(--breath); margin-top:6px}
+
+  .awards{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .aw{background:var(--slate); border:1px solid var(--line); border-radius:16px; padding:14px; opacity:.42}
+  .aw.got{opacity:1; border-color:rgba(111,227,196,.4); background:rgba(111,227,196,.07)}
+  .aw .ic{font-size:20px; font-family:var(--mono); color:var(--ash)}
+  .aw.got .ic{color:var(--breath)}
+  .aw .n{margin-top:8px; font-weight:600; font-size:14px}
+  .aw .c{font-size:12px; color:var(--ash); margin-top:2px}
+
+  .field{margin-bottom:16px}
+  .field label{display:block; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--ash); margin-bottom:7px}
+  .field .hint{text-transform:none; letter-spacing:0; display:block; font-size:12px; color:var(--ash); margin-top:6px}
+  .field input{width:100%; padding:13px 14px; border-radius:13px; background:var(--slate); border:1px solid var(--line); color:var(--bone); font-family:var(--mono); font-size:16px}
+  .field input:focus{outline:2px solid var(--breath); outline-offset:1px; border-color:transparent}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px}
+  .btn{width:100%; padding:15px; border-radius:14px; background:var(--breath); color:#0B1A17; font-weight:700; letter-spacing:.02em}
+  .btn:active{opacity:.85}
+  .btn.ghost{background:none; border:1px solid var(--line); color:var(--ash); font-weight:500}
+  .btn.danger{background:none; border:1px solid rgba(232,121,74,.4); color:var(--ember); font-weight:600}
+  .note{font-size:12px; color:var(--ash); margin-top:10px; line-height:1.5}
+  .stack{display:flex; flex-direction:column; gap:10px; margin-top:18px}
+  .calc{
+    background:var(--slate); border:1px solid var(--line); border-radius:14px;
+    padding:12px 14px; font-family:var(--mono); font-size:13px; color:var(--ash); margin-bottom:18px;
+  }
+  .calc b{color:var(--breath); font-weight:600}
+
+  .tabs{
+    position:fixed; left:0; right:0; bottom:0; z-index:20; display:flex; justify-content:center; gap:4px;
+    padding:8px 12px calc(8px + env(safe-area-inset-bottom));
+    background:linear-gradient(to top, var(--ink) 62%, rgba(14,20,32,0));
+  }
+  .tabs .in{display:flex; gap:2px; background:var(--slate); border:1px solid var(--line); border-radius:18px; padding:4px; width:100%; max-width:480px}
+  .tab{flex:1; padding:9px 4px; border-radius:14px; text-align:center; font-size:11px; letter-spacing:.08em; color:var(--ash); font-family:var(--mono); text-transform:uppercase}
+  .tab.on{background:var(--slate-2); color:var(--bone)}
+
+  .veil{position:fixed; inset:0; z-index:50; background:var(--ink); display:none; flex-direction:column; align-items:center; justify-content:center; padding:24px; text-align:center}
+  .veil.on{display:flex}
+  .orb{
+    width:180px; height:180px; border-radius:50%; border:1px solid rgba(111,227,196,.45);
+    background:radial-gradient(circle, rgba(111,227,196,.20), rgba(111,227,196,0) 70%);
+    transition:transform 4s cubic-bezier(.4,0,.4,1); display:flex; align-items:center; justify-content:center;
+  }
+  .orb span{font-family:var(--mono); font-size:13px; letter-spacing:.2em; text-transform:uppercase; color:var(--breath)}
+  .veil .phase{margin-top:34px; font-size:22px; font-weight:600}
+  .veil .tip{margin-top:10px; font-size:14px; color:var(--ash); max-width:300px; min-height:44px}
+  .veil .out{margin-top:34px; display:flex; gap:10px; width:100%; max-width:320px}
+  .veil .out .btn{flex:1}
+
+  .setup{position:fixed; inset:0; z-index:60; background:var(--ink); overflow-y:auto; padding:calc(40px + env(safe-area-inset-top)) 22px 40px; display:none}
+  .setup.on{display:block}
+  .setup .wrap{max-width:480px; margin:0 auto}
+  .setup h1{font-size:26px; margin:0 0 6px; letter-spacing:-.02em}
+  .setup p.lead{color:var(--ash); font-size:14px; margin:0 0 26px}
+
+  @media (prefers-reduced-motion: reduce){*{animation:none !important; transition:none !important}}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="hud">
+    <div class="brand"><b>◎</b> не парю</div>
+    <div class="record" id="record"></div>
+  </div>
+
+  <main>
+    <!-- ============ ПРОГРЕСС ============ -->
+    <section class="view on" id="v-progress">
+      <div class="hero">
+        <div class="aura"></div>
+        <div class="eyebrow">без никотина</div>
+        <div class="clock">
+          <div class="unit days"><span class="n" id="c-d">0</span><span class="u">дней</span></div>
+          <div class="unit"><span class="n" id="c-h">00</span><span class="u">час</span></div>
+          <div class="unit"><span class="n" id="c-m">00</span><span class="u">мин</span></div>
+          <div class="unit"><span class="n" id="c-s">00</span><span class="u">сек</span></div>
+        </div>
+        <div class="since" id="since"></div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="k">не испарено</div>
+          <div class="v" id="s-ml">0</div>
+          <div class="s" id="s-batch">0 партий</div>
+        </div>
+        <div class="card">
+          <div class="k">сэкономлено</div>
+          <div class="v" id="s-money">0</div>
+          <div class="s" id="s-money-sub"></div>
+        </div>
+        <div class="card" id="card-nic">
+          <div class="k">никотина мимо</div>
+          <div class="v" id="s-nic">0</div>
+          <div class="s" id="s-nic-sub"></div>
+        </div>
+        <div class="card">
+          <div class="k">тяга побеждена</div>
+          <div class="v" id="s-urges">0</div>
+          <div class="s">раз вы удержались</div>
+        </div>
+        <div class="card wide">
+          <div class="k">следующий рубеж</div>
+          <div class="v" id="s-next" style="font-size:16px; line-height:1.3">—</div>
+          <div class="bar"><i id="s-next-bar" style="width:0%"></i></div>
+          <div class="s" id="s-next-left"></div>
+        </div>
+      </div>
+
+      <button class="urge" id="btn-urge"><span class="dot"></span> Тянет парить</button>
+    </section>
+
+    <!-- ============ ЗДОРОВЬЕ ============ -->
+    <section class="view" id="v-health">
+      <h2 class="sec">Отвыкание от никотина</h2>
+      <ul class="tl" id="timeline"></ul>
+      <p class="note">Сроки — ориентир по данным об отказе от никотина. Долгосрочные эффекты именно вейпинга изучены хуже, чем у сигарет, поэтому дальние рубежи описаны осторожно: они про зависимость и самочувствие, а не про статистику болезней.</p>
+    </section>
+
+    <!-- ============ НАГРАДЫ ============ -->
+    <section class="view" id="v-awards">
+      <h2 class="sec">Награды</h2>
+      <div class="awards" id="awards"></div>
+    </section>
+
+    <!-- ============ НАСТРОЙКИ ============ -->
+    <section class="view" id="v-settings">
+      <h2 class="sec">Расход и стоимость</h2>
+      <div class="calc" id="calc-out"></div>
+
+      <div class="field">
+        <label for="f-date">Последняя затяжка</label>
+        <input type="datetime-local" id="f-date">
+      </div>
+      <div class="row3">
+        <div class="field">
+          <label for="f-vol">Объём, мл</label>
+          <input type="number" id="f-vol" inputmode="decimal" min="1" step="1">
+        </div>
+        <div class="field">
+          <label for="f-price">Цена</label>
+          <input type="number" id="f-price" inputmode="decimal" min="0" step="0.01">
+        </div>
+        <div class="field">
+          <label for="f-days">Хватает, дн</label>
+          <input type="number" id="f-days" inputmode="numeric" min="1" step="1">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="f-nic">Никотин, мг/мл</label>
+          <input type="number" id="f-nic" inputmode="decimal" min="0" max="60" step="0.5">
+        </div>
+        <div class="field">
+          <label for="f-cur">Валюта</label>
+          <input type="text" id="f-cur" maxlength="4">
+        </div>
+      </div>
+      <div class="stack">
+        <button class="btn" id="btn-save">Сохранить</button>
+        <button class="btn danger" id="btn-reset">Я сорвался — начать отсчёт заново</button>
+      </div>
+      <p class="note">Всё хранится только на этом устройстве. Ничего никуда не отправляется.</p>
+    </section>
+  </main>
+
+  <nav class="tabs">
+    <div class="in">
+      <button class="tab on" data-v="progress">Прогресс</button>
+      <button class="tab" data-v="health">Здоровье</button>
+      <button class="tab" data-v="awards">Награды</button>
+      <button class="tab" data-v="settings">Ещё</button>
+    </div>
+  </nav>
+</div>
+
+<!-- ============ ДЫХАНИЕ ============ -->
+<div class="veil" id="veil">
+  <div class="orb" id="orb"><span id="orb-count">4</span></div>
+  <div class="phase" id="phase">Вдох через нос</div>
+  <div class="tip" id="tip"></div>
+  <div class="out">
+    <button class="btn ghost" id="btn-relapse">Всё же парнул</button>
+    <button class="btn" id="btn-won">Я справился</button>
+  </div>
+</div>
+
+<!-- ============ ПЕРВЫЙ ЗАПУСК ============ -->
+<div class="setup" id="setup">
+  <div class="wrap">
+    <h1>Считаем с этой минуты</h1>
+    <p class="lead">Расход считаем по вашей партии жижи: сколько намешали, во сколько обошлось, на сколько хватает.</p>
+    <div class="field">
+      <label for="i-date">Когда была последняя затяжка</label>
+      <input type="datetime-local" id="i-date">
+    </div>
+    <div class="row3">
+      <div class="field">
+        <label for="i-vol">Объём, мл</label>
+        <input type="number" id="i-vol" inputmode="decimal" value="100" min="1" step="1">
+      </div>
+      <div class="field">
+        <label for="i-price">Цена</label>
+        <input type="number" id="i-price" inputmode="decimal" value="25" min="0" step="0.01">
+      </div>
+      <div class="field">
+        <label for="i-days">Хватает, дн</label>
+        <input type="number" id="i-days" inputmode="numeric" value="45" min="1" step="1">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="i-nic">Никотин, мг/мл</label>
+        <input type="number" id="i-nic" inputmode="decimal" value="6" min="0" max="60" step="0.5">
+        <span class="hint">0 — если мешаете без никотина</span>
+      </div>
+      <div class="field">
+        <label for="i-cur">Валюта</label>
+        <input type="text" id="i-cur" value="€" maxlength="4">
+      </div>
+    </div>
+    <div class="stack">
+      <button class="btn" id="btn-start">Начать</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   ХРАНИЛИЩЕ: window.storage (превью) → localStorage (телефон) → память
+   ============================================================ */
+const KEY = 'neparyu:v1';
+const Store = {
+  mem:null,
+  async load(){
+    try{
+      if (window.storage && window.storage.get){
+        const r = await window.storage.get(KEY);
+        if (r && r.value) return JSON.parse(r.value);
+        return null;
+      }
+    }catch(e){}
+    try{
+      const raw = localStorage.getItem(KEY);
+      if (raw) return JSON.parse(raw);
+    }catch(e){}
+    return this.mem;
+  },
+  async save(data){
+    this.mem = data;
+    const s = JSON.stringify(data);
+    try{ localStorage.setItem(KEY, s); }catch(e){}
+    try{ if (window.storage && window.storage.set) await window.storage.set(KEY, s); }catch(e){}
+  }
+};
+
+let S = null, tickId = null;
+const MIN=60, HOUR=3600, DAY=86400;
+
+/* ============================================================
+   ОТВЫКАНИЕ ОТ НИКОТИНА
+   ============================================================ */
+const MILESTONES = [
+  {t:2*HOUR,   at:'2 часа',    h:'Пульс и давление свои',        d:'Половина никотина уже вышла — сосуды перестали сужаться.'},
+  {t:12*HOUR,  at:'12 часов',  h:'Никотина в крови почти нет',   d:'Начинается абстиненция: раздражительность и тяга — это она.'},
+  {t:24*HOUR,  at:'1 сутки',   h:'Первые сутки взяты',           d:'Самый резкий период. Дальше будет не легче, но короче.'},
+  {t:3*DAY,    at:'3 суток',   h:'Пик тяги пройден',             d:'Котинин выведен полностью. С этого момента идёт спад.'},
+  {t:5*DAY,    at:'5 суток',   h:'Горло и рот пришли в норму',   d:'Сухость, першение и «вейперский» кашель уходят — пропиленгликоль больше не сушит слизистую.'},
+  {t:7*DAY,    at:'1 неделя',  h:'Сон выравнивается',            d:'Никотин больше не будит вас ночью и не глушит утром.'},
+  {t:14*DAY,   at:'2 недели',  h:'Тяга стала редкой',            d:'Приступы приходят по привычке к ситуации, а не из-за химии.'},
+  {t:21*DAY,   at:'3 недели',  h:'Вкус и запах острее',          d:'Ароматизаторы больше не забивают рецепторы.'},
+  {t:30*DAY,   at:'1 месяц',   h:'Дыхание чище',                 d:'Одышка и утренний кашель уходят, нагрузка даётся легче.'},
+  {t:90*DAY,   at:'3 месяца',  h:'Рецепторы вернулись к норме',  d:'Никотиновых рецепторов в мозге столько же, сколько у никогда не паривших. Это конец физической зависимости.'},
+  {t:180*DAY,  at:'6 месяцев', h:'Настроение без подпитки',      d:'Тревожность и концентрация держатся сами, без никотина.'},
+  {t:365*DAY,  at:'1 год',     h:'Год без пара',                 d:'Риск сорваться минимальный, и дорога к сигаретам закрыта окончательно.'}
+];
+
+const TIPS = [
+  'Тяга держится 3–5 минут. Вы уже почти пережили её.',
+  'Выпейте стакан холодной воды маленькими глотками.',
+  'Занять руки — половина дела. Девайса нет, возьмите что-то другое.',
+  'Встаньте и пройдитесь. Движение сбивает пик желания.',
+  'Это привычка руки, а не потребность тела. Никотин давно вышел.',
+  'Одна затяжка обнулит счётчик. Он того не стоит.',
+  'Умойтесь холодной водой и подышите у открытого окна.'
+];
+
+const AWARDS = [
+  {ic:'01', n:'Первые сутки', c:'24 часа без пара',       test:s=>s.sec>=DAY},
+  {ic:'03', n:'Три дня',      c:'Пик тяги позади',         test:s=>s.sec>=3*DAY},
+  {ic:'07', n:'Неделя',       c:'7 дней подряд',           test:s=>s.sec>=7*DAY},
+  {ic:'14', n:'Две недели',   c:'14 дней',                 test:s=>s.sec>=14*DAY},
+  {ic:'30', n:'Месяц',        c:'30 дней',                 test:s=>s.sec>=30*DAY},
+  {ic:'90', n:'Три месяца',   c:'Конец зависимости',       test:s=>s.sec>=90*DAY},
+  {ic:'6м', n:'Полгода',      c:'180 дней',                test:s=>s.sec>=180*DAY},
+  {ic:'1г', n:'Год',          c:'365 дней',                test:s=>s.sec>=365*DAY},
+  {ic:'2г', n:'Два года',     c:'730 дней',                test:s=>s.sec>=730*DAY},
+  {ic:'10', n:'10 мл',        c:'Не испарено 10 мл',       test:s=>s.ml>=10},
+  {ic:'50', n:'50 мл',        c:'Не испарено 50 мл',       test:s=>s.ml>=50},
+  {ic:'½',  n:'Полпартии',    c:'Половина замеса цела',    test:s=>s.batches>=0.5},
+  {ic:'1×', n:'Целая партия', c:'Замес не понадобился',    test:s=>s.batches>=1},
+  {ic:'3×', n:'Три партии',   c:'Три замеса мимо',         test:s=>s.batches>=3},
+  {ic:'♦',  n:'Сила воли',    c:'20 раз победить тягу',    test:s=>s.urges>=20},
+  {ic:'Nic',n:'Грамм никотина', c:'1000 мг не получено',   test:s=>s.nic>=1000}
+];
+
+/* ============================================================
+   ФОРМАТ
+   ============================================================ */
+const nf = new Intl.NumberFormat('ru-RU');
+const nf1 = new Intl.NumberFormat('ru-RU', {maximumFractionDigits:1});
+const nf2 = new Intl.NumberFormat('ru-RU', {maximumFractionDigits:2});
+const pad = n => String(n).padStart(2,'0');
+
+function plural(n, one, few, many){
+  const a = Math.abs(Math.floor(n)) % 100, b = a % 10;
+  if (a > 10 && a < 20) return many;
+  if (b > 1 && b < 5) return few;
+  if (b === 1) return one;
+  return many;
+}
+function humanDur(sec){
+  sec = Math.max(0, Math.floor(sec));
+  const d = Math.floor(sec/DAY), h = Math.floor(sec%DAY/HOUR), m = Math.floor(sec%HOUR/MIN);
+  if (d) return d + ' ' + plural(d,'день','дня','дней') + (h ? ' ' + h + ' ч' : '');
+  if (h) return h + ' ' + plural(h,'час','часа','часов') + (m ? ' ' + m + ' мин' : '');
+  return m + ' ' + plural(m,'минута','минуты','минут');
+}
+function money(v){
+  return (v >= 1000 ? nf.format(Math.round(v)) : nf2.format(v)) + ' ' + S.cur;
+}
+
+/* ============================================================
+   РАСЧЁТ
+   ============================================================ */
+function mlPerDay(){ return S.vol / S.daysPerBatch; }
+function pricePerMl(){ return S.price / S.vol; }
+
+function calc(){
+  const sec = Math.max(0, (Date.now() - S.quit) / 1000);
+  const ml = sec / DAY * mlPerDay();
+  return {
+    sec, ml,
+    batches: ml / S.vol,
+    money: ml * pricePerMl(),
+    nic: ml * S.nic,
+    urges: S.urges || 0
+  };
+}
+
+/* ============================================================
+   ОТРИСОВКА
+   ============================================================ */
+function render(){
+  const c = calc();
+  const sec = Math.floor(c.sec);
+
+  document.getElementById('c-d').textContent = Math.floor(sec/DAY);
+  document.getElementById('c-h').textContent = pad(Math.floor(sec%DAY/HOUR));
+  document.getElementById('c-m').textContent = pad(Math.floor(sec%HOUR/MIN));
+  document.getElementById('c-s').textContent = pad(sec%60);
+
+  const dt = new Date(S.quit);
+  document.getElementById('since').textContent =
+    'с ' + dt.toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'}) +
+    ', ' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
+
+  document.getElementById('s-ml').textContent = nf1.format(c.ml) + ' мл';
+  document.getElementById('s-batch').textContent =
+    nf2.format(c.batches) + ' ' + plural(c.batches,'партия','партии','партий') + ' по ' + nf1.format(S.vol) + ' мл';
+
+  document.getElementById('s-money').textContent = money(c.money);
+  document.getElementById('s-money-sub').textContent =
+    'в месяц ' + money(mlPerDay() * pricePerMl() * 30) + ' · в год ' + money(mlPerDay() * pricePerMl() * 365);
+
+  const nicCard = document.getElementById('card-nic');
+  if (S.nic > 0){
+    nicCard.classList.remove('hidden');
+    document.getElementById('s-nic').textContent =
+      c.nic >= 1000 ? nf2.format(c.nic/1000) + ' г' : nf.format(Math.floor(c.nic)) + ' мг';
+    document.getElementById('s-nic-sub').textContent = S.nic + ' мг/мл в вашем замесе';
+  } else {
+    nicCard.classList.add('hidden');
+  }
+
+  document.getElementById('s-urges').textContent = nf.format(c.urges);
+
+  const next = MILESTONES.find(m => m.t > c.sec);
+  const prev = [...MILESTONES].reverse().find(m => m.t <= c.sec);
+  if (next){
+    const from = prev ? prev.t : 0;
+    const p = (c.sec - from) / (next.t - from) * 100;
+    document.getElementById('s-next').textContent = next.h;
+    document.getElementById('s-next-bar').style.width = Math.min(100,p).toFixed(1) + '%';
+    document.getElementById('s-next-left').textContent = 'через ' + humanDur(next.t - c.sec) + ' · ' + next.at;
+  } else {
+    document.getElementById('s-next').textContent = 'Все рубежи пройдены';
+    document.getElementById('s-next-bar').style.width = '100%';
+    document.getElementById('s-next-left').textContent = 'Зависимости больше нет';
+  }
+
+  document.getElementById('record').textContent =
+    (S.best && S.best > c.sec + 60) ? 'рекорд ' + humanDur(S.best) : '';
+
+  renderTimeline(c);
+  renderAwards(c);
+  renderCalc();
+}
+
+function renderTimeline(c){
+  const nextIdx = MILESTONES.findIndex(m => m.t > c.sec);
+  document.getElementById('timeline').innerHTML = MILESTONES.map((m,i) => {
+    const done = c.sec >= m.t;
+    const isNow = i === nextIdx;
+    const from = i ? MILESTONES[i-1].t : 0;
+    const p = done ? 100 : Math.max(0, (c.sec - from) / (m.t - from) * 100);
+    return `<li class="ms ${done?'done':''} ${isNow?'now':''}">
+      <div class="t">${m.at}</div>
+      <div class="h">${m.h}</div>
+      <div class="d">${m.d}</div>
+      ${done ? '' : `<div class="bar"><i style="width:${p.toFixed(1)}%"></i></div>
+      ${isNow ? `<div class="left">осталось ${humanDur(m.t - c.sec)}</div>` : ''}`}
+    </li>`;
+  }).join('');
+}
+
+function renderAwards(c){
+  document.getElementById('awards').innerHTML = AWARDS.map(a => {
+    const got = a.test(c);
+    return `<div class="aw ${got?'got':''}">
+      <div class="ic">${a.ic}</div>
+      <div class="n">${a.n}</div>
+      <div class="c">${got ? 'Получено' : a.c}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderCalc(){
+  document.getElementById('calc-out').innerHTML =
+    `расход <b>${nf2.format(mlPerDay())} мл/день</b> · цена <b>${nf2.format(pricePerMl())} ${S.cur}/мл</b><br>` +
+    `это <b>${money(mlPerDay()*pricePerMl()*30)}</b> в месяц`;
+}
+
+/* ============================================================
+   НАВИГАЦИЯ
+   ============================================================ */
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
+    document.querySelectorAll('.view').forEach(x => x.classList.remove('on'));
+    t.classList.add('on');
+    document.getElementById('v-' + t.dataset.v).classList.add('on');
+    window.scrollTo(0,0);
+  });
+});
+
+/* ============================================================
+   ДЫХАНИЕ 4–7–8
+   ============================================================ */
+const veil = document.getElementById('veil');
+const orb = document.getElementById('orb');
+let breathTimer = null;
+
+function startBreathing(){
+  document.getElementById('tip').textContent = TIPS[Math.floor(Math.random()*TIPS.length)];
+  veil.classList.add('on');
+  const phases = [
+    {name:'Вдох через нос',  len:4, scale:1.35},
+    {name:'Задержите',       len:7, scale:1.35},
+    {name:'Выдох через рот', len:8, scale:0.72}
+  ];
+  let phase = 0, left = phases[0].len;
+  const apply = () => {
+    const p = phases[phase];
+    document.getElementById('phase').textContent = p.name;
+    orb.style.transitionDuration = p.len + 's';
+    orb.style.transform = 'scale(' + p.scale + ')';
+    left = p.len;
+    document.getElementById('orb-count').textContent = left;
+  };
+  apply();
+  clearInterval(breathTimer);
+  breathTimer = setInterval(() => {
+    left--;
+    if (left <= 0){ phase = (phase + 1) % 3; apply(); }
+    else document.getElementById('orb-count').textContent = left;
+  }, 1000);
+}
+function stopBreathing(){
+  clearInterval(breathTimer); breathTimer = null;
+  orb.style.transitionDuration = '.4s';
+  orb.style.transform = 'scale(1)';
+  veil.classList.remove('on');
+}
+
+document.getElementById('btn-urge').addEventListener('click', startBreathing);
+document.getElementById('btn-won').addEventListener('click', async () => {
+  S.urges = (S.urges || 0) + 1;
+  await Store.save(S);
+  stopBreathing();
+  render();
+});
+document.getElementById('btn-relapse').addEventListener('click', () => { stopBreathing(); doReset(); });
+
+/* ============================================================
+   СБРОС
+   ============================================================ */
+async function doReset(){
+  const c = calc();
+  if (!confirm('Обнулить счётчик? Текущий результат — ' + humanDur(c.sec) + '.\nОн сохранится как рекорд.')) return;
+  S.best = Math.max(S.best || 0, Math.floor(c.sec));
+  S.quit = Date.now();
+  await Store.save(S);
+  fillSettings();
+  render();
+}
+document.getElementById('btn-reset').addEventListener('click', doReset);
+
+/* ============================================================
+   НАСТРОЙКИ
+   ============================================================ */
+function toLocalInput(ms){
+  const d = new Date(ms - new Date().getTimezoneOffset()*60000);
+  return d.toISOString().slice(0,16);
+}
+function fillSettings(){
+  document.getElementById('f-date').value  = toLocalInput(S.quit);
+  document.getElementById('f-vol').value   = S.vol;
+  document.getElementById('f-price').value = S.price;
+  document.getElementById('f-days').value  = S.daysPerBatch;
+  document.getElementById('f-nic').value   = S.nic;
+  document.getElementById('f-cur').value   = S.cur;
+}
+document.getElementById('btn-save').addEventListener('click', async () => {
+  const v = document.getElementById('f-date').value;
+  const q = v ? new Date(v).getTime() : S.quit;
+  if (q > Date.now()){ alert('Дата не может быть в будущем.'); return; }
+  S.quit = q;
+  S.vol          = Math.max(1, +document.getElementById('f-vol').value   || 100);
+  S.price        = Math.max(0, +document.getElementById('f-price').value || 0);
+  S.daysPerBatch = Math.max(1, +document.getElementById('f-days').value  || 45);
+  S.nic          = Math.max(0, +document.getElementById('f-nic').value   || 0);
+  S.cur          = document.getElementById('f-cur').value.trim() || '€';
+  await Store.save(S);
+  render();
+  document.querySelector('.tab[data-v="progress"]').click();
+});
+
+/* ============================================================
+   ПЕРВЫЙ ЗАПУСК
+   ============================================================ */
+document.getElementById('btn-start').addEventListener('click', async () => {
+  const v = document.getElementById('i-date').value;
+  const q = v ? new Date(v).getTime() : Date.now();
+  S = {
+    quit: Math.min(q, Date.now()),
+    vol:          Math.max(1, +document.getElementById('i-vol').value   || 100),
+    price:        Math.max(0, +document.getElementById('i-price').value || 0),
+    daysPerBatch: Math.max(1, +document.getElementById('i-days').value  || 45),
+    nic:          Math.max(0, +document.getElementById('i-nic').value   || 0),
+    cur:          document.getElementById('i-cur').value.trim() || '€',
+    urges: 0, best: 0
+  };
+  await Store.save(S);
+  document.getElementById('setup').classList.remove('on');
+  fillSettings();
+  start();
+});
+
+/* ============================================================
+   СТАРТ
+   ============================================================ */
+function start(){
+  render();
+  clearInterval(tickId);
+  tickId = setInterval(render, 500);
+}
+
+(async function init(){
+  const saved = await Store.load();
+  if (saved && saved.quit && saved.vol){
+    S = saved;
+    fillSettings();
+    start();
+  } else {
+    document.getElementById('i-date').value = toLocalInput(Date.now());
+    document.getElementById('setup').classList.add('on');
+  }
+})();
+
+document.addEventListener('visibilitychange', () => { if (!document.hidden && S) render(); });
+
+/* офлайн-режим: без него приложение не установится на главный экран */
+if ('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
